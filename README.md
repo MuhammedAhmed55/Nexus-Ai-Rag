@@ -40,7 +40,8 @@ Chat with your own documents — powered by local LLMs, zero data leaves your in
 <br /><br />
 
 **Rag Response**
-<img src="frontend/public/Chat-Ai.png" alt="Chat Ai" width="110" />
+
+<img src="frontend/public/Chat-Ai.png" alt="Chat Ai" width="800" />
 
 
 </div>

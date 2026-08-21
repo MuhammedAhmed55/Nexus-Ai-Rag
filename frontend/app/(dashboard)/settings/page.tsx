@@ -39,7 +39,7 @@ export default function SettingsPage() {
         const fetchProfile = async () => {
             try {
                 const { user, profile: userProfile } = await AuthService.getUser()
-                const fullName = userProfile.full_name || ''
+                const fullName = userProfile?.full_name || ''
                 const parts = fullName.split(' ')
                 const firstName = parts[0] || ''
                 const lastName = parts.length > 1 ? parts.slice(1).join(' ') : ''
@@ -48,7 +48,7 @@ export default function SettingsPage() {
                     full_name: fullName,
                     first_name: firstName,
                     last_name: lastName,
-                    email: user.email || ''
+                    email: user?.email || ''
                 })
             } catch (error) {
                 console.error("Failed to load user profile:", error)

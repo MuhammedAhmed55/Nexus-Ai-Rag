@@ -43,6 +43,11 @@ Chat with your own documents — powered by local LLMs, zero data leaves your in
 
 <img src="frontend/public/Chat-Ai.png" alt="Chat Ai" width="800" />
 
+<br /><br />
+
+**Swagger UI**
+
+<img src="frontend/public/swagger-ui.png" alt="Swagger Ui" width="800" />
 
 </div>
 

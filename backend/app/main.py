@@ -20,3 +20,7 @@ app.include_router(ingestion.router, prefix="/api/v1")
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Nexus AI Backend Running"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}

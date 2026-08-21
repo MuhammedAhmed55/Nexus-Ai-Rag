@@ -2,8 +2,9 @@ from fastapi import APIRouter, File, UploadFile, Depends
 from uuid import UUID, uuid4
 
 from app.models.ingestion import IngestionJobResult
+from app.models.document import DocumentOut
 from app.services.ingestion_service import process_document
-from app.repositories.document_repository import create_document
+from app.repositories.document_repository import create_document, get_documents, delete_document
 from app.core.security import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -27,3 +28,17 @@ async def upload_document(
     )
 
     return await process_document(file, doc_id, current_user.id)
+
+@router.get("", response_model=list[DocumentOut])
+async def list_documents(
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    return await get_documents(current_user.id)
+
+@router.delete("/{document_id}")
+async def remove_document(
+    document_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    await delete_document(document_id, current_user.id)
+    return {"message": "Document deleted successfully"}

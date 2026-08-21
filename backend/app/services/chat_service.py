@@ -10,6 +10,12 @@ from app.rag.prompt_builder import build_messages
 from app.agents.agent import ProductionAgent
 from app.core.monitoring import get_logger
 from app.repositories.document_repository import get_document_names
+from app.repositories.chat_repository import (
+    create_conversation,
+    get_conversation,
+    create_message,
+    create_message_sources
+)
 
 logger = get_logger()
 security_pipeline = SecurityPipeline()
@@ -93,11 +99,37 @@ async def process_chat(request: ChatRequest, user_id: UUID) -> MessageOut:
         if warnings:
             logger.warning(f"Security warnings on output: {warnings}")
             
-        # 8. Update Cache
+        # 8. Store in Database
+        # Check if conversation exists, if not create it
+        existing_conv = await get_conversation(conversation_id, user_id)
+        if not existing_conv:
+            title = cleaned_message[:50] + "..." if len(cleaned_message) > 50 else cleaned_message
+            await create_conversation(conversation_id, user_id, title)
+            
+        # Store user message
+        user_message_id = uuid4()
+        await create_message(user_message_id, conversation_id, "user", request.message)
+        
+        # Store assistant message
+        assistant_message_id = uuid4()
+        await create_message(assistant_message_id, conversation_id, "assistant", validated_response)
+        
+        # Store sources
+        if sources:
+            source_records = []
+            for src in sources:
+                source_records.append({
+                    "message_id": str(assistant_message_id),
+                    "chunk_id": str(src.chunk_id),
+                    "similarity_score": src.similarity_score
+                })
+            await create_message_sources(source_records)
+
+        # 9. Update Cache
         response_cache.set(cache_key, validated_response)
 
         return MessageOut(
-            id=uuid4(),
+            id=assistant_message_id,
             conversation_id=conversation_id,
             role="assistant",
             content=validated_response,

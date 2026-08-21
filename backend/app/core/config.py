@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     langchain_project: str = "production-api"
 
     # Supabase
-    supabase_url: str = "https://lempvxwxhkuzaelesybo.supabase.co"
-    supabase_service_role_key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlbXB2eHd4aGt1emFlbGVzeWJvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjYzODY5OSwiZXhwIjoyMDcyMjE0Njk5fQ.9h48382nFv58Qz8-QYn3Q-M0lD0u76xN_4_o2yW2hM8"
+    supabase_url: str
+    supabase_service_role_key: str
 
     # Application
     app_env: str = "development"

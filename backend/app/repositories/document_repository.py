@@ -65,3 +65,20 @@ async def get_document_names(document_ids: list[UUID]) -> dict[UUID, str]:
         .execute()
     )
     return {UUID(row["id"]): row["name"] for row in response.data}
+
+
+async def get_documents(user_id: UUID) -> list[dict]:
+    supabase = get_supabase()
+    response = (
+        supabase.table("documents")
+        .select("*")
+        .eq("user_id", str(user_id))
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return response.data
+
+async def delete_document(document_id: UUID, user_id: UUID) -> None:
+    supabase = get_supabase()
+    # Ensure the user owns the document before deleting
+    supabase.table("documents").delete().eq("id", str(document_id)).eq("user_id", str(user_id)).execute()

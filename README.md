@@ -171,10 +171,6 @@ The frontend will be available at `http://localhost:3000`.
 4. Upload your documents in the chat interface.
 5. Ask questions and get cited answers directly from your data.
 
-## 📜 License
-
-This project is licensed under the [MIT License](LICENSE).
-
 ---
 
 <div align="center">

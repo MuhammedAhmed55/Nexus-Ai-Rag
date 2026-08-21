@@ -5,6 +5,7 @@ from app.models.chat import ChatRequest, MessageOut, MessageSourceOut
 from app.core.security import SecurityPipeline
 from app.core.cache import ResponseCache
 from app.rag.retriever import retrieve
+from app.rag.router import classify_query
 from app.rag.context_builder import build_context
 from app.rag.prompt_builder import build_messages
 from app.agents.agent import ProductionAgent
@@ -52,34 +53,46 @@ async def process_chat(request: ChatRequest, user_id: UUID) -> MessageOut:
                 created_at=datetime.now(timezone.utc),
             )
 
-        # 3. Retrieve chunks
-        logger.info(f"Retrieving chunks for query: {cleaned_message}")
-        chunks = await retrieve(
-            query=cleaned_message,
-            user_id=user_id,
-            document_ids=request.document_ids
-        )
+        # 3. Classify and Retrieve
+        query_type = "GENERAL"
+        if request.document_ids:
+            logger.info(f"Classifying query to determine RAG necessity: {cleaned_message}")
+            query_type = await classify_query(cleaned_message)
+            logger.info(f"Query classified as: {query_type}")
 
-        # Resolve real filenames in one batch query instead of trusting
-        # chunk metadata, which never actually carried a "filename" key —
-        # that's what was producing "Unknown Document" every time.
-        distinct_doc_ids = list({UUID(chunk["document_id"]) for chunk in chunks})
-        doc_names = await get_document_names(distinct_doc_ids)
-
+        chunks = []
         sources = []
-        for chunk in chunks:
-            doc_id = UUID(chunk["document_id"])
-            sources.append(MessageSourceOut(
-                chunk_id=UUID(chunk["id"]),
-                document_id=doc_id,
-                document_name=doc_names.get(doc_id, "Unknown Document"),
-                content=chunk["content"],
-                page_number=chunk.get("page_number"),
-                similarity_score=chunk.get("similarity", 0.0)
-            ))
+        context = ""
 
-        # 4. Build context
-        context = build_context(chunks)
+        if query_type in ["DOCUMENT", "MIXED"]:
+            logger.info(f"Retrieving chunks for query: {cleaned_message}")
+            chunks = await retrieve(
+                query=cleaned_message,
+                user_id=user_id,
+                document_ids=request.document_ids
+            )
+
+            # Resolve real filenames in one batch query instead of trusting
+            # chunk metadata, which never actually carried a "filename" key —
+            # that's what was producing "Unknown Document" every time.
+            distinct_doc_ids = list({UUID(chunk["document_id"]) for chunk in chunks})
+            doc_names = await get_document_names(distinct_doc_ids)
+
+            for chunk in chunks:
+                doc_id = UUID(chunk["document_id"])
+                sources.append(MessageSourceOut(
+                    chunk_id=UUID(chunk["id"]),
+                    document_id=doc_id,
+                    document_name=doc_names.get(doc_id, "Unknown Document"),
+                    content=chunk["content"],
+                    page_number=chunk.get("page_number"),
+                    similarity_score=chunk.get("similarity", 0.0)
+                ))
+
+            # 4. Build context
+            context = build_context(chunks)
+        else:
+            logger.info("Skipping document retrieval for GENERAL query.")
 
         # 5. Build prompt
         messages = build_messages(cleaned_message, context, [])

@@ -23,11 +23,19 @@ def build_messages(
     if conversation_history:
         messages.extend(conversation_history)
 
-    messages.append(
-        {
-            "role": "user",
-            "content": f"Context:\n{context}\n\nQuestion: {question}",
-        }
-    )
+    if context and context.strip():
+        messages.append(
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion: {question}",
+            }
+        )
+    else:
+        messages.append(
+            {
+                "role": "user",
+                "content": question,
+            }
+        )
 
     return messages

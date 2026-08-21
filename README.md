@@ -39,8 +39,8 @@ Chat with your own documents — powered by local LLMs, zero data leaves your in
 
 <br /><br />
 
-**Chat Ai**
-<img src="frontend/public/Chat-Ai.png" alt="Nexus AI Logo" width="110" />
+**Rag Response**
+<img src="frontend/public/Chat-Ai.png" alt="Chat Ai" width="110" />
 
 
 </div>

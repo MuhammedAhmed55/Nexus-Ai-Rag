@@ -27,17 +27,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
-    MessageSquare,
     FileText,
     Settings,
     Plus,
@@ -45,16 +37,12 @@ import {
     LogOut,
     Sparkles,
     Pin,
-    MoreVertical,
-    FolderOpen,
-    Upload,
-    Database,
+    MessageSquare,
     PanelLeftClose,
     PanelLeftOpen,
 } from "lucide-react"
 
 import { ChatService } from "@/services/chat.service"
-import { format } from "date-fns"
 
 interface Conversation {
     id: string;
@@ -67,7 +55,6 @@ export function DashboardSidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const { toggleSidebar, state } = useSidebar()
-    const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [profile, setProfile] = useState<{ full_name: string, email: string } | null>(null)
@@ -86,7 +73,7 @@ export function DashboardSidebar() {
                 console.error("Failed to load user profile:", error)
             }
         }
-        
+
         const fetchConversations = async () => {
             try {
                 const { data, error } = await ChatService.getConversations()
@@ -97,7 +84,7 @@ export function DashboardSidebar() {
                 console.error("Failed to fetch conversations:", error)
             }
         }
-        
+
         fetchProfile()
         fetchConversations()
     }, [pathname])
@@ -110,6 +97,9 @@ export function DashboardSidebar() {
     const filteredChats = conversations.filter(chat =>
         chat.title.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    // When there's no query yet, show recent conversations as a starting point
+    const searchResults = searchQuery.trim() ? filteredChats : conversations.slice(0, 8)
+
     const pinnedChats = conversations.filter(chat => chat.pinned)
     const recentChats = conversations.filter(chat => !chat.pinned)
 
@@ -120,14 +110,16 @@ export function DashboardSidebar() {
         router.push("/")
     }
 
+    const handleNewChat = () => {
+        router.push("/chat")
+    }
+
     return (
         <Sidebar collapsible="icon">
             {/* ── Header ───────────────────────────────────────────── */}
             <SidebarHeader className="p-0 border-b border-sidebar-border">
 
-                {/* Logo row — hidden when collapsed, replaced by toggle */}
                 <div className="flex items-center justify-between px-3 py-3">
-                    {/* Logo: visible only when expanded */}
                     <Link
                         href="/"
                         className="flex items-center gap-2.5 overflow-hidden group-data-[collapsible=icon]:hidden"
@@ -138,7 +130,6 @@ export function DashboardSidebar() {
                         <span className="font-bold text-base tracking-tight">Nexus AI</span>
                     </Link>
 
-                    {/* Collapse toggle — always visible, centered when collapsed */}
                     <Button
                         variant="ghost"
                         size="icon"
@@ -155,10 +146,10 @@ export function DashboardSidebar() {
 
                 {/* Action buttons: New Chat + Search */}
                 <div className="px-2 pb-2 flex flex-col gap-1.5 group-data-[collapsible=icon]:items-center">
-                    {/* New Chat */}
+                    {/* New Chat — just navigates, no dialog */}
                     <SidebarMenuButton
                         tooltip="New Chat"
-                        onClick={() => setIsNewChatDialogOpen(true)}
+                        onClick={handleNewChat}
                         className="h-9 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary font-medium border border-primary/20"
                     >
                         <Plus className="h-4 w-4 shrink-0" />
@@ -180,20 +171,10 @@ export function DashboardSidebar() {
             {/* ── Main content ─────────────────────────────────────── */}
             <SidebarContent className="px-2 py-2 gap-0">
 
-                {/* Nav: Chat & Documents */}
+                {/* Nav: Documents only */}
                 <SidebarGroup className="p-0 mb-1">
                     <SidebarGroupContent>
                         <SidebarMenu className="gap-0.5">
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Chat"
-                                    isActive={isActive("/chat")}
-                                    render={<Link href="/chat" />}
-                                >
-                                    <MessageSquare className="h-4 w-4 shrink-0" />
-                                    <span>Chat</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     tooltip="Documents"
@@ -263,21 +244,20 @@ export function DashboardSidebar() {
                     <SidebarMenuItem>
                         <DropdownMenu>
                             <DropdownMenuTrigger
-                                    data-slot="sidebar-menu-button"
-                                    data-sidebar="menu-button"
-                                    data-size="lg"
-                                    className="peer/menu-button flex w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-hidden transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:!w-9 group-data-[collapsible=icon]:!h-9 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto data-[state=open]:bg-sidebar-accent"
-                                >
-                                    <Avatar className="h-7 w-7 rounded-lg shrink-0">
-                                        <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-xs font-semibold">
-                                            {profile ? getInitials(profile.full_name) : '--'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 text-left leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
-                                        <p className="text-sm font-medium truncate">{profile?.full_name || 'Loading...'}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{profile?.email || 'Loading...'}</p>
-                                    </div>
-                                    <MoreVertical className="h-4 w-4 shrink-0 text-muted-foreground ml-auto group-data-[collapsible=icon]:hidden" />
+                                data-slot="sidebar-menu-button"
+                                data-sidebar="menu-button"
+                                data-size="lg"
+                                className="peer/menu-button flex w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-hidden transition-colors hover:bg-sidebar-accent group-data-[collapsible=icon]:!w-9 group-data-[collapsible=icon]:!h-9 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto data-[state=open]:bg-sidebar-accent"
+                            >
+                                <Avatar className="h-7 w-7 rounded-lg shrink-0">
+                                    <AvatarFallback className="rounded-lg bg-primary/20 text-primary text-xs font-semibold">
+                                        {profile ? getInitials(profile.full_name) : '--'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 text-left leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
+                                    <p className="text-sm font-medium truncate">{profile?.full_name || 'Loading...'}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{profile?.email || 'Loading...'}</p>
+                                </div>
                             </DropdownMenuTrigger>
 
                             <DropdownMenuContent
@@ -286,10 +266,9 @@ export function DashboardSidebar() {
                                 sideOffset={8}
                                 className="w-56 bg-[#1c1f27] border border-white/10 rounded-xl shadow-2xl p-1"
                             >
-                                {/* User info header inside menu */}
                                 <div className="px-2 py-2 mb-1">
-                                    <p className="text-sm font-medium">Alex Rivera</p>
-                                    <p className="text-xs text-muted-foreground">alex@nexus.ai</p>
+                                    <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                                    <p className="text-xs text-muted-foreground">{profile?.email}</p>
                                 </div>
                                 <DropdownMenuSeparator className="bg-white/10" />
 
@@ -316,89 +295,58 @@ export function DashboardSidebar() {
                 </SidebarMenu>
             </SidebarFooter>
 
-            {/* Drag-to-resize rail */}
             <SidebarRail />
 
-            {/* ── Dialogs ──────────────────────────────────────────── */}
-
-            {/* New Chat dialog */}
-            <Dialog open={isNewChatDialogOpen} onOpenChange={setIsNewChatDialogOpen}>
-                <DialogContent className="glass-strong sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Start a new chat</DialogTitle>
-                        <DialogDescription>
-                            Ask your documents anything — every answer traces back to a real source.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex flex-col gap-3 py-4">
-                        <div
-                            className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/50 transition-all cursor-pointer"
-                            onClick={() => setIsNewChatDialogOpen(false)}
-                        >
-                            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                <FileText className="h-5 w-5 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-sm">Upload a document</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, TXT up to 10MB</p>
-                            </div>
-                            <Upload className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div
-                            className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-accent/50 transition-all cursor-pointer"
-                            onClick={() => { setIsNewChatDialogOpen(false); router.push("/chat") }}
-                        >
-                            <div className="h-10 w-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                                <Database className="h-5 w-5 text-accent" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-sm">Use existing documents</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">3 documents available</p>
-                            </div>
-                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsNewChatDialogOpen(false)}>Cancel</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Search dialog */}
+            {/* ── Search dialog — command-palette style ─────────────── */}
             <Dialog open={isSearchOpen} onOpenChange={(open) => { setIsSearchOpen(open); if (!open) setSearchQuery("") }}>
-                <DialogContent className="glass-strong sm:max-w-[500px] p-0 gap-0 overflow-hidden">
-                    <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+                <DialogContent
+                    showCloseButton={false}
+                    className="bg-[#14161c] border border-white/10 sm:max-w-[560px] p-0 gap-0 overflow-hidden rounded-2xl shadow-2xl top-[20%] translate-y-0"
+                >
+                    <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3.5">
                         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                         <Input
                             placeholder="Search conversations..."
-                            className="border-0 focus-visible:ring-0 bg-transparent shadow-none text-sm h-auto p-0"
+                            className="border-0 focus-visible:ring-0 bg-transparent shadow-none text-sm h-auto p-0 placeholder:text-muted-foreground/50 p-[8px]"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             autoFocus
                         />
+                        <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 text-[10px] font-medium text-muted-foreground shrink-0">
+                            Esc
+                        </kbd>
                     </div>
-                    <div className="max-h-80 overflow-y-auto">
-                        {filteredChats.length > 0 ? (
-                            <div className="p-1.5 space-y-0.5">
-                                {filteredChats.map(chat => (
+
+                    <div className="max-h-96 overflow-y-auto">
+                        {searchResults.length > 0 ? (
+                            <div className="p-2 space-y-0.5">
+                                <p className="px-2.5 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                                    {searchQuery.trim() ? `Results` : "Recent"}
+                                </p>
+                                {searchResults.map(chat => (
                                     <button
                                         key={chat.id}
-                                        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-left hover:bg-white/8 transition-colors"
+                                        className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm text-left hover:bg-white/8 active:bg-white/12 transition-colors group"
                                         onClick={() => {
                                             setIsSearchOpen(false)
                                             setSearchQuery("")
                                             router.push(`/chat/${chat.id}`)
                                         }}
                                     >
-                                        <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                                        <span className="truncate">{chat.title}</span>
+                                        {chat.pinned ? (
+                                            <Pin className="h-4 w-4 text-primary shrink-0" />
+                                        ) : (
+                                            <MessageSquare className="h-4 w-4 text-muted-foreground/60 shrink-0 group-hover:text-muted-foreground" />
+                                        )}
+                                        <span className="truncate flex-1">{chat.title}</span>
                                     </button>
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-                                <Search className="h-8 w-8 mb-2 opacity-30" />
+                            <div className="flex flex-col items-center justify-center py-14 text-muted-foreground">
+                                <Search className="h-8 w-8 mb-3 opacity-20" />
                                 <p className="text-sm">No conversations found</p>
+                                <p className="text-xs text-muted-foreground/50 mt-1">Try a different search term</p>
                             </div>
                         )}
                     </div>

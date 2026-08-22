@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import { DocumentService } from "@/services/document.service"
 import { Document } from "@/types/documents"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
     Table,
     TableBody,
@@ -16,38 +17,14 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-    Upload,
     Search,
-    Download,
     Trash2,
     FileText as FileTextIcon,
-    Calendar,
-    HardDrive,
     Database,
-    MoreVertical,
-    Eye,
-    Edit2,
-    FileUp,
     CheckCircle2,
     Loader2,
     AlertCircle,
+    Paperclip,
 } from "lucide-react"
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -88,13 +65,12 @@ const getStatusBadge = (status: string) => {
 
 export default function DocumentsPage() {
     const [searchQuery, setSearchQuery] = useState("")
-    const [isUploadOpen, setIsUploadOpen] = useState(false)
-    const [isDragActive, setIsDragActive] = useState(false)
     const [documents, setDocuments] = useState<Document[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
         const fetchDocuments = async () => {
+            setIsLoading(true)
             const { data, error } = await DocumentService.getDocuments()
             if (data && !error) {
                 setDocuments(data)
@@ -122,7 +98,7 @@ export default function DocumentsPage() {
     return (
         <div className="flex flex-col h-full bg-background relative overflow-y-auto">
             <div className="max-w-[1400px] w-full mx-auto p-4 md:p-8">
-                {/* Header */}
+                {/* Header — upload button removed, uploads happen from chat now */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
@@ -132,93 +108,71 @@ export default function DocumentsPage() {
                             Manage your documents — they're processed locally for privacy.
                         </p>
                     </div>
-                    
-                    <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-                        <DialogTrigger
-                            render={<Button className="gap-2 shadow-sm" />}
-                        >
-                            <Upload className="h-4 w-4" />
-                            Upload Document
-                        </DialogTrigger>
-                        <DialogContent className="glass-strong sm:max-w-[500px]">
-                            <DialogHeader>
-                                <DialogTitle>Upload Document</DialogTitle>
-                                <DialogDescription>
-                                    Add new documents to your Nexus AI workspace. Supported formats: PDF, DOCX, TXT.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-6">
-                                <div 
-                                    className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl transition-colors ${
-                                        isDragActive ? 'border-primary bg-primary/5' : 'border-white/10 hover:border-primary/50 hover:bg-white/5'
-                                    }`}
-                                    onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
-                                    onDragLeave={() => setIsDragActive(false)}
-                                    onDrop={(e) => { e.preventDefault(); setIsDragActive(false); }}
-                                >
-                                    <div className="h-14 w-14 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                        <FileUp className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                    <h3 className="text-lg font-medium mb-1">Drag & drop files here</h3>
-                                    <p className="text-sm text-muted-foreground text-center mb-6 max-w-[250px]">
-                                        Files will be processed locally on your machine. Max size 50MB.
-                                    </p>
-                                    <Button variant="secondary" className="gap-2">
-                                        Browse Files
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <Card className="glass-strong border-white/5 shadow-sm">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <FileTextIcon className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-semibold tracking-tight">{documents.length}</p>
-                                <p className="text-sm text-muted-foreground font-medium">Total Documents</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="glass-strong border-white/5 shadow-sm">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-semibold tracking-tight">{documents.filter(d => d.status === 'processed').length}</p>
-                                <p className="text-sm text-muted-foreground font-medium">Ready to Chat</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="glass-strong border-white/5 shadow-sm">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
-                                <Loader2 className="h-5 w-5 text-amber-500 animate-spin-slow" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-semibold tracking-tight">{documents.filter(d => d.status === 'processing').length}</p>
-                                <p className="text-sm text-muted-foreground font-medium">Processing</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="glass-strong border-white/5 shadow-sm">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
-                                <Database className="h-5 w-5 text-accent" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-semibold tracking-tight">{documents.reduce((acc, doc) => acc + (doc.chunk_count || 0), 0)}</p>
-                                <p className="text-sm text-muted-foreground font-medium">Total Chunks</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                {isLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Card key={i} className="glass-strong border-white/5 shadow-sm">
+                                <CardContent className="p-5 flex items-center gap-4">
+                                    <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                                    <div className="flex flex-col gap-2 flex-1">
+                                        <Skeleton className="h-6 w-10" />
+                                        <Skeleton className="h-3 w-24" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <Card className="glass-strong border-white/5 shadow-sm">
+                            <CardContent className="p-5 flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                    <FileTextIcon className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-semibold tracking-tight">{documents.length}</p>
+                                    <p className="text-sm text-muted-foreground font-medium">Total Documents</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="glass-strong border-white/5 shadow-sm">
+                            <CardContent className="p-5 flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-semibold tracking-tight">{documents.filter(d => d.status === 'processed').length}</p>
+                                    <p className="text-sm text-muted-foreground font-medium">Ready to Chat</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="glass-strong border-white/5 shadow-sm">
+                            <CardContent className="p-5 flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                                    <Loader2 className="h-5 w-5 text-amber-500 animate-spin-slow" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-semibold tracking-tight">{documents.filter(d => d.status === 'processing').length}</p>
+                                    <p className="text-sm text-muted-foreground font-medium">Processing</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="glass-strong border-white/5 shadow-sm">
+                            <CardContent className="p-5 flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20">
+                                    <Database className="h-5 w-5 text-accent" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-semibold tracking-tight">{documents.reduce((acc, doc) => acc + (doc.chunk_count || 0), 0)}</p>
+                                    <p className="text-sm text-muted-foreground font-medium">Total Chunks</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Main Content Area */}
                 <Card className="glass-strong border-white/5 shadow-sm flex flex-col min-h-[400px]">
@@ -231,23 +185,39 @@ export default function DocumentsPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-9 h-9 bg-white/5 border-white/10 focus:border-primary text-sm shadow-none"
+                                disabled={isLoading}
                             />
                         </div>
                     </div>
-                    
-                    {documents.length === 0 ? (
+
+                    {isLoading ? (
+                        <div className="p-4 space-y-3">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 py-2">
+                                    <Skeleton className="h-8 w-8 rounded-md shrink-0" />
+                                    <div className="flex flex-col gap-1.5 flex-1">
+                                        <Skeleton className="h-3.5 w-1/3" />
+                                        <Skeleton className="h-2.5 w-1/5" />
+                                    </div>
+                                    <Skeleton className="h-3.5 w-12" />
+                                    <Skeleton className="h-3.5 w-20" />
+                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : documents.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center py-16 px-4">
                             <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
                                 <FileTextIcon className="h-8 w-8 text-muted-foreground" />
                             </div>
                             <h3 className="text-xl font-medium mb-2">No documents yet</h3>
-                            <p className="text-muted-foreground text-center max-w-md mb-6">
-                                Upload your first document to start asking questions with Nexus AI.
+                            <p className="text-muted-foreground text-center max-w-md mb-2">
+                                Upload your first document from a chat to start asking questions with Nexus AI.
                             </p>
-                            <Button onClick={() => setIsUploadOpen(true)} className="gap-2 shadow-sm">
-                                <Upload className="h-4 w-4" />
-                                Upload Document
-                            </Button>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                                <Paperclip className="h-3.5 w-3.5" />
+                                <span>Use the attach icon in the chat composer</span>
+                            </div>
                         </div>
                     ) : (
                         <div className="flex-1 overflow-auto">
@@ -268,8 +238,8 @@ export default function DocumentsPage() {
                                                 <div className="flex items-center gap-3">
                                                     {getFileIcon(doc.file_type)}
                                                     <div className="flex flex-col min-w-0">
-                                                        <span 
-                                                            className="truncate max-w-[200px] sm:max-w-[300px] md:max-w-[400px]" 
+                                                        <span
+                                                            className="truncate max-w-[200px] sm:max-w-[300px] md:max-w-[400px]"
                                                             title={doc.name}
                                                         >
                                                             {doc.name}
@@ -286,8 +256,8 @@ export default function DocumentsPage() {
                                                 {getStatusBadge(doc.status)}
                                             </TableCell>
                                             <TableCell className="text-right py-3 pr-4">
-                                                <Button 
-                                                    variant="ghost" 
+                                                <Button
+                                                    variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
                                                     onClick={() => handleDelete(doc.id)}

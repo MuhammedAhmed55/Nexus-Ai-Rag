@@ -1,7 +1,14 @@
 // centralized API client pointing to FastAPI
 import { createClient } from "@/lib/supabase/client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const getApiUrl = () => {
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (typeof window !== 'undefined') {
+        return `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+    }
+    return "http://localhost:8000/api/v1";
+};
+const API_URL = getApiUrl();
 
 async function getAuthHeader(): Promise<Record<string, string>> {
     const supabase = createClient();

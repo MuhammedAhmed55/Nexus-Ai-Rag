@@ -8,7 +8,8 @@ app = FastAPI(title="Nexus AI Backend")
 # Setup CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Should be restricted in production
+    allow_origins=[], 
+    allow_origin_regex=".*", # Allow any origin (including LAN IPs) with credentials
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
